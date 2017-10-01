@@ -62,30 +62,31 @@ public class Instruction {
 			desc = "noop";
 			break;
 		case 1: // simple jump
-			desc = "jump " + p1;
+			desc = "jump code" + p1;
 			break;
 		case 2: // addition (addleq, add and branch if less than or equal to
 				// zero)[5]
 			desc = "addleq " + p1 + " " + p2 + " " + p3;
-			desc += "  (add " + p1 + "+" + p2 + " and if <= 0 jump to " + p3 + ")";
+			desc += "  (add mem" + p1 + "+ mem" + p2 + " and if <= 0 jump to code" + p3 + ")";
 			break;
 		case 3: // decrement (DJN, decrement and branch (jump) if nonzero)[6]
 			desc = "decnzj " + p1 + " " + p2;
-			desc += "  (decrement " + p1 + " and if !=0 jump to " + p2 + ")";
+			desc += "  (decrement mem" + p1 + " and if !=0 jump to code" + p2 + ")";
 			break;
 		case 4: // increment (P1eq, plus 1 and branch if equal to another
 				// value)[7]
 			desc = "inceq " + p1 + " " + p2 + " " + p3;
-			desc += "  (increment " + p1 + " and if equal to " + p2 + " jump to " + p3 + ")";
+			desc += "  (increment mem" + p1 + " and if equal to mem" + p2 + " jump to code " + p3 + ")";
 			break;
 		case 5: // subtraction (subleq, subtract and branch if less than or
 				// equal)[8][9]
 			desc = "subleq " + p1 + " " + p2 + " " + p3 + " " + p4;
-			desc += "  (subtract " + p2 + " from " + p1 + " and if less than " + p3 + " jump to " + p4 + ")";
+			desc += "  (subtract mem" + p2 + " from mem" + p1 + " and if less than mem" + p3 + " jump to code " + p4
+					+ ")";
 			break;
 		case 6: // copy to result
 			desc = "copyres " + p1 + " " + p2;
-			desc += "  (copy " + p1 + " to output location " + p2 + ")";
+			desc += "  (copy mem" + p1 + " to output" + p2 + ")";
 			break;
 		case 7: // set value at location.
 			desc = "setval " + p1 + " " + p2;

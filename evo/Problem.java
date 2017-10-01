@@ -2,6 +2,7 @@ package evo;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 
 public class Problem {
 
@@ -9,13 +10,15 @@ public class Problem {
 	ArrayList<Form> forms;
 
 	// max count of forms
-	int maxForms = 1;
+	int maxForms = 10000;
 
 	ArrayList<Float> scoreHistory = new ArrayList<Float>();
 
 	boolean solved = false;
 	float topScore;
 	int sameTopScoreCount = 0;
+
+	Random rand = new Random();
 
 	Problem() {
 		forms = new ArrayList<Form>();
@@ -29,8 +32,13 @@ public class Problem {
 	// Run all forms.
 	void runRace() {
 		// System.out.println("forms.size():" + forms.size());
+
+		int[] input = new int[2];
+		input[0] = rand.nextInt(100);
+		input[1] = rand.nextInt(100);
+
 		for (Form f : forms) {
-			f.run();
+			f.run(input);
 		}
 	}
 
@@ -50,32 +58,36 @@ public class Problem {
 		for (Form f : forms) {
 			float eval = evaluate(f);
 			if (!f.producedOutput) {
-				eval = Float.MIN_VALUE;
+				eval = Float.NEGATIVE_INFINITY;
 			}
 			f.scores.add(eval);
 
-			float sum = 0.0f;
+			double sum = 0.0f;
 			for (float s : f.scores) {
 				// System.out.print(s + ",");
 				sum += s;
 			}
-			
-			f.score = sum / f.scores.size();
-			scoreHistory.add(f.score);
+
+			f.score = (float) (sum / f.scores.size());
 
 			if (f.score > topScore) {
 				topScore = f.score;
-				sameTopScoreCount = 0;
-			} else if (f.score == topScore) {
+			}
+
+			if (f.score == topScore) {
 				sameTopScoreCount++;
-				// If we get the same score for 100 cycles count the problem as
+				// If we get the same score for 1000 cycles count the problem as
 				// solved.
-				if (sameTopScoreCount > 100 && topScore != Float.MIN_VALUE) {
+				if (sameTopScoreCount > 1000 && topScore != Float.MIN_VALUE) {
+					System.out.print("Found same top score (" + topScore + ") for many cycles.  Marking solved.");
 					solved = true;
 				}
+			} else {
+				sameTopScoreCount = 0;
 			}
 
 			// System.out.println(" --> " + f.score);
+			// scoreHistory.add(f.score);
 		}
 	}
 
@@ -84,20 +96,20 @@ public class Problem {
 	}
 
 	void progressFirst(int winnerCount) {
-		int slotsPerWinner = Math.max(1, maxForms / winnerCount);
+		int slotsPerWinner = maxForms / winnerCount;
 		ArrayList<Form> newForms = new ArrayList<Form>();
 
 		for (int i = 0; i < winnerCount; i++) {
 			for (int j = 0; j < slotsPerWinner; j++) {
-				newForms.add(new Form(forms.get(i)));
+				newForms.add(new Form(forms.get(i), true));
 			}
 		}
-		
+
 
 		// Fill any remainders with random forms (plus 10 extra).
-		// for (int i = newForms.size(); i < maxForms + 10; i++) {
-		// newForms.add(new Form());
-		// }
+		for (int i = newForms.size(); i < maxForms + 10; i++) {
+			newForms.add(new Form());
+		}
 
 		// Replace.
 		forms = newForms;
@@ -119,17 +131,15 @@ public class Problem {
 		sortWinners();
 		// printScores(5);
 
-		if (runid % 1 == 0) {
+		if (runid % 100 == 0 || solved) {
+			System.out.println("Best code example (of " + forms.size() + " :");
+			forms.get(0).print();
+		}
 
-			if (runid % 1 == 0) {
-				forms.get(0).print();
-				// System.out.println("----------");
-			}
-
-			System.out.println("Forms.size(): " + forms.size());
-			System.out.println("Cycle : " + runid + " Best score: " + forms.get(0).score + ", run cost "
-					+ forms.get(0).execCost / forms.get(0).runCount + " ops: " + forms.get(0).code.size());
-
+		if (runid % 10 == 0) {
+			System.out.print("[" + runid + " S:" + forms.get(0).score + " C:"
+					+ forms.get(0).execCost / forms.get(0).runCount + " ] ");
+			// ops: " + forms.get(0).code.size());
 		}
 
 		progressFirst(10);
@@ -138,12 +148,7 @@ public class Problem {
 	void runManyCycles(int n) {
 		for (int i = 0; i < n; i++) {
 
-			if (!solved) {
-				runCycle(i);
-			} else {
-				System.out.println("Problem solved (?)  Here's the best code: ");
-				forms.get(0).print();
-			}
+			runCycle(i);
 		}
 	}
 }
@@ -167,11 +172,20 @@ class Negate extends Problem {
 	}
 }
 
+class NCopy extends Problem {
+	@Override
+	float evaluate(Form f) {
+		/* Copy input[n] to output[n] */
+		float score = -(Math.abs(f.input[0] - f.output[0]) + Math.abs(f.input[1] - f.output[1]));
+		return score;
+	}
+}
+
 class Copy extends Problem {
 	@Override
 	float evaluate(Form f) {
-		/* Copy input[n] to output[n] and */
-		float score = -(Math.abs(f.input[0] - f.output[0]) + Math.abs(f.input[1] -f.output[1]));
+		/* Copy input[0] to output[0] */
+		float score = -(Math.abs(f.input[0] - f.output[0]));
 		return score;
 	}
 }

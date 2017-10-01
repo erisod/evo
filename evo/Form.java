@@ -11,15 +11,15 @@ public class Form implements Comparable<Form> {
 	int[] output;
 	int[] input;
 	int[] mem;
-	int codesize = 50;
-	int memsize = 10;
-	int iosize = 5;
+	int codesize = 10;
+	int memsize = 2;
+	int iosize = 2;
 	int ops; // Non-nop operations in code.
 	int execCost = 0;
 	int runCount = 0;
 	boolean producedOutput = false;
 	boolean finished = false;
-	Random rand = new Random();
+	static Random rand = new Random();
 	float score;
 	ArrayList<Float> scores = new ArrayList<Float>();
 
@@ -30,22 +30,19 @@ public class Form implements Comparable<Form> {
 
 		mem = new int[memsize];
 		output = new int[iosize];
-		input = new int[iosize];
 
 		reset();
 	}
 
 	void reset() {
-		input[0] = rand.nextInt(200);
-		input[1] = rand.nextInt(200);
 		cp = 0;
 		finished = false;
 		producedOutput = false;
 
-		for (int i = 0; i < iosize; i++) {
+		for (int i = 0; i < output.length; i++) {
 			output[i] = 0;
 		}
-		for (int i = 0; i < memsize; i++) {
+		for (int i = 0; i < mem.length; i++) {
 			mem[i] = 0;
 		}
 	}
@@ -54,13 +51,17 @@ public class Form implements Comparable<Form> {
 		System.out.println("CODE  cp @ " + cp);
 		for (int i = 0; i < code.size(); i++) {
 			// if (!code.get(i).noop())
-				System.out.println("  " + i + " : " + code.get(i));
+			System.out.println("  " + i + " : " + code.get(i));
 		}
 
 		System.out.println("INPUT: ");
-		for (int i = 0; i < input.length; i++) {
-			if (input[i] != 0) {
-				System.out.println("  input[" + i + "] : " + input[i]);
+		if (input == null) {
+			System.out.println("  Form never run; no input.");
+		} else { 
+			for (int i = 0; i < input.length; i++) {
+				if (input[i] != 0) {
+					System.out.println("  input[" + i + "] : " + input[i]);
+				}
 			}
 		}
 
@@ -75,7 +76,6 @@ public class Form implements Comparable<Form> {
 		if (runCount > 0) {
 			System.out.println("avg run cost " + execCost / runCount);
 		}
-		System.out.println("operations total: " + ops);
 	}
 
 	// Generate a form from nothing (maybe random, maybe empty).
@@ -102,12 +102,14 @@ public class Form implements Comparable<Form> {
 		 */
 	}
 
-	// Generate a form from a parent with mutation.
-	Form(Form parent) {
+	// Generate a form from a parent with mutation optional.
+	Form(Form parent, boolean mutate) {
 		init();
 
 		int j = 0;
-		int mutationRate = 1; // 1 in n.
+		int mutationRate = 100; // 1 in n.
+
+		Instruction newInst;
 
 		// j is the incrementor for the parent.
 		while (code.size() < codesize && j < parent.code.size()) {
@@ -117,71 +119,85 @@ public class Form implements Comparable<Form> {
 			// (2) segment removal, duplication.
 			// (3) random additional instructions.
 
-			// Induce transcription error. Overwrite (lose copied segment).
-			if (code.size() > 0 && rand.nextInt(mutationRate) == 0) {
-				for (int k = rand.nextInt(code.size()); k > 0; k--) {
-					code.remove(code.size() - 1);
-				}
-				continue;
-			}
+			boolean segmentMutation = false;
 
-			// Transcription error. Skip/duplicate.
-			if (rand.nextInt(mutationRate) == 0) {
-				j = rand.nextInt(parent.codesize);
-				continue;
+			if (segmentMutation && !mutate) {
+				// Induce transcription error. Overwrite (lose copied segment).
+				if (code.size() > 0 && rand.nextInt(mutationRate) == 0) {
+					// Remove 3 at most.
+					for (int k = rand.nextInt(Math.min(code.size(), 3)); k > 0; k--) {
+						code.remove(code.size() - 1);
+					}
+					continue;
+				}
+
+				// Transcription error. Skip/duplicate.
+				if (rand.nextInt(mutationRate) == 0) {
+					j = rand.nextInt(parent.codesize);
+					continue;
+				}
+
+				// Add new random instructions.
+				if ((rand.nextInt(mutationRate)) == 0) {
+					for (int i = 0; i < 20; i++) {
+						newInst = new Instruction();
+						newInst.operation = rand.nextInt(Instruction.maxOp());
+						newInst.p1 = rand.nextInt(parent.codesize * 2) / 2;
+						newInst.p2 = rand.nextInt(parent.codesize * 2) / 2;
+						newInst.p3 = rand.nextInt(parent.codesize * 2) / 2;
+						newInst.p4 = rand.nextInt(parent.codesize * 2) / 2;
+					}
+				}
 			}
 
 			// Copy the operation from the parent.
-			Instruction newInst = parent.code.get(j).copy();
-			
-			// Mutate the operation.
-			if ((rand.nextInt(mutationRate)) == 0) {
-				newInst.operation = rand.nextInt(Instruction.maxOp());
-			}
-			
-			// Mutate parameters.
-			if ((rand.nextInt(mutationRate)) == 0) {
-				newInst.p1 = rand.nextInt(parent.codesize * 2) / 2;
-			}
-			if ((rand.nextInt(mutationRate)) == 0) {
-				newInst.p2 = rand.nextInt(parent.codesize * 2) / 2;
-			}
-			if ((rand.nextInt(mutationRate)) == 0) {
-				newInst.p3 = rand.nextInt(parent.codesize * 2) / 2;
-			}
-			if ((rand.nextInt(mutationRate)) == 0) {
-				newInst.p4 = rand.nextInt(parent.codesize * 2) / 2;
-			}
+			newInst = parent.code.get(j).copy();
 
-			code.add(newInst);
-
-			// Add some random instructions.
-			if ((rand.nextInt(mutationRate)) == 0) {
-				for (int i = 0; i < 20; i++) {
-					newInst = new Instruction();
+			if (mutate) {
+				// Mutate the operation.
+				if ((rand.nextInt(mutationRate)) == 0) {
 					newInst.operation = rand.nextInt(Instruction.maxOp());
+				}
+
+				// Mutate parameters.
+				if ((rand.nextInt(mutationRate)) == 0) {
 					newInst.p1 = rand.nextInt(parent.codesize * 2) / 2;
+				}
+				if ((rand.nextInt(mutationRate)) == 0) {
 					newInst.p2 = rand.nextInt(parent.codesize * 2) / 2;
+				}
+				if ((rand.nextInt(mutationRate)) == 0) {
 					newInst.p3 = rand.nextInt(parent.codesize * 2) / 2;
+				}
+				if ((rand.nextInt(mutationRate)) == 0) {
 					newInst.p4 = rand.nextInt(parent.codesize * 2) / 2;
 				}
 			}
 
+			code.add(newInst);
+
 			j++;
 		}
+
+		// System.out.println("parent was " + parent.code.size() + " and child is " + code.size());
 	}
 
-	void run() {
+	void run(int[] newInput) {
 		runCount++;
-		System.out.println("run() called");
+
+		if (newInput == null) {
+			System.out.println("Input is null.  Fatal!");
+			System.exit(1);
+		}
+		input = newInput;
 		// System.out.println("code size : " + code.size());
 		// System.out.println("addr: " + this);
 
 		reset();
 		int maxOps = 50;
 		int opsleft = maxOps;
-		
-		while (!finished && opsleft-- > 0) {
+
+		while (!finished && opsleft-- > 0 && cp < code.size() && cp >= 0) {
 			step();
 		}
 
@@ -203,7 +219,7 @@ public class Form implements Comparable<Form> {
 		mem[op.p2] = mem[op.p2] - mem[op.p1];
 		if (mem[op.p2] < 0)
 			cp = op.p3;
-		else 
+		else
 			cp++;
 	}
 
@@ -214,7 +230,7 @@ public class Form implements Comparable<Form> {
 		mem[op.p1] += 1;
 		if (mem[op.p1] == mem[op.p2])
 			cp = op.p3;
-		else 
+		else
 			cp++;
 	}
 
@@ -225,7 +241,7 @@ public class Form implements Comparable<Form> {
 		mem[op.p1] -= mem[op.p2];
 		if (mem[op.p1] <= mem[op.p3])
 			cp = op.p4;
-		else 
+		else
 			cp++;
 	}
 
@@ -260,7 +276,7 @@ public class Form implements Comparable<Form> {
 	}
 
 	private void step() {
-		try { 
+		try {
 			if (cp < 0 || cp > code.size()) {
 				finished = true;
 				return;
@@ -270,10 +286,10 @@ public class Form implements Comparable<Form> {
 			// Operations based on https://en.wikipedia.org/wiki/One_instruction_set_computer
 			// "Arithmetic-based Turing-complete machines".
 			switch (op.operation) {
-			case 0:  // no-op.
+			case 0: // no-op.
 				cp++;
 				break;
-			case 1:  // simple jump
+			case 1: // simple jump
 				jump();
 				break;
 			case 2: // addition (addleq, add and branch if less than or equal to zero)[5]
@@ -316,8 +332,17 @@ public class Form implements Comparable<Form> {
 			return -1;
 		} else if (score < o.score) {
 			return 1;
+		} else if (score < 0) {
+			// Compare by execution cost, but only if score is at or above zero.
+			return 0;
 		} else {
-			// Compare execution cost.
+			/* Note : Comparing on execution cost when the problem isn't
+			 * solved is bad.  It results in optimizing for an immediately terminating program.
+			 */
+
+			// System.out.println("Evaluating form based on code and cost. Score @ " + score);
+
+			// Prefer more efficient code.
 			if ((execCost / runCount) < (o.execCost / o.runCount)) {
 				return -1;
 			} else if ((execCost / runCount) > (o.execCost / o.runCount)) {
