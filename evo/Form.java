@@ -11,12 +11,13 @@ public class Form implements Comparable<Form> {
 	int[] output;
 	int[] input;
 	int[] mem;
-	int codesize = 10;
+	int codesize = 15;
 	int memsize = 2;
 	int iosize = 2;
 	int ops; // Non-nop operations in code.
 	int execCost = 0;
 	int runCount = 0;
+	int maxOps = 50; // Maximum allowed operations per run.
 	boolean producedOutput = false;
 	boolean finished = false;
 	static Random rand = new Random();
@@ -74,7 +75,7 @@ public class Form implements Comparable<Form> {
 
 		System.out.println("SCORE: " + score);
 		if (runCount > 0) {
-			System.out.println("avg run cost " + execCost / runCount);
+			System.out.println("avg run cost " + runCost());
 		}
 	}
 
@@ -182,6 +183,13 @@ public class Form implements Comparable<Form> {
 		// System.out.println("parent was " + parent.code.size() + " and child is " + code.size());
 	}
 
+	float runCost() {
+		if (runCount == 0) {
+			return 0;
+		}
+		return execCost / runCount;
+	}
+
 	void run(int[] newInput) {
 		runCount++;
 
@@ -194,14 +202,15 @@ public class Form implements Comparable<Form> {
 		// System.out.println("addr: " + this);
 
 		reset();
-		int maxOps = 50;
 		int opsleft = maxOps;
 
-		while (!finished && opsleft-- > 0 && cp < code.size() && cp >= 0) {
+		while (!finished && opsleft > 0 && cp < code.size() && cp >= 0) {
 			step();
+			opsleft--;
+			execCost++;
 		}
 
-		execCost += maxOps - opsleft;
+		// execCost += maxOps - opsleft;
 	}
 
 	private void addleq() {
@@ -246,7 +255,7 @@ public class Form implements Comparable<Form> {
 	}
 
 	private void copyToResult() {
-		// Copy value at position to result position.
+		// Copy value at mem position to result position.
 		Instruction op = code.get(cp);
 		producedOutput = true;
 
@@ -255,7 +264,7 @@ public class Form implements Comparable<Form> {
 	}
 
 	private void copyFromInput() {
-		// Copy value at position to result position.
+		// Copy value at input position to mem position.
 		Instruction op = code.get(cp);
 
 		mem[op.p2] = input[op.p1];
@@ -343,9 +352,9 @@ public class Form implements Comparable<Form> {
 			// System.out.println("Evaluating form based on code and cost. Score @ " + score);
 
 			// Prefer more efficient code.
-			if ((execCost / runCount) < (o.execCost / o.runCount)) {
+			if ((runCost()) < o.runCost()) {
 				return -1;
-			} else if ((execCost / runCount) > (o.execCost / o.runCount)) {
+			} else if (runCost() > o.runCost()) {
 				return 1;
 			} else {
 				// Compare code cost (size of code).

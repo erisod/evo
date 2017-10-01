@@ -21,7 +21,8 @@ public class Instruction {
 
 	static int maxOp() {
 		// Maximum operation number.
-		return 9;
+		int operationCount = 10;
+		return operationCount;
 	}
 
 	Instruction(int randRange) {
@@ -97,7 +98,7 @@ public class Instruction {
 			break;
 		case 9: // copy from input
 			desc = "copyin " + p1 + " " + p2;
-			desc += "  (copy input value from " + p1 + " to memory " + p2 + ")";
+			desc += "  (copy input " + p1 + " to mem" + p2 + ")";
 			break;
 		default: // Invalid instruction.
 			desc = "INVALID-OP";

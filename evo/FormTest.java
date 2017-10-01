@@ -80,4 +80,50 @@ public class FormTest {
 		assertEquals("Expect copy op[0]=9", 9, formCopy.code.get(0).operation);
 	}
 
+	@Test
+	public void costEvalTest() {
+		int[] input = new int[10];
+		input[0] = 103;
+		input[1] = 20;
+
+		// Create an endless loop form.
+		Form tf = new Form();
+
+		tf.code.get(0).operation = 1;
+		tf.code.get(0).p1 = 1;
+
+		tf.code.get(1).operation = 1;
+		tf.code.get(1).p1 = 0;
+
+		assertEquals("Expect tf.runcost() is 0", 0.0f, tf.runCost(), 0.0f);
+		tf.run(input);
+
+		assertEquals("Expect tf.runcost() after run of infinite loop is max ", tf.runCost(), (float) tf.maxOps, 0.0f);
+
+		assertEquals("Expect correct run count of 1", 1, tf.runCount);
+
+		tf.run(input);
+
+		assertEquals("Expect tf.runcost() after run of infinite loop is max ", tf.runCost(), (float) tf.maxOps, 0.0f);
+		assertEquals("Expect correct run count of 1", 2, tf.runCount);
+
+		// Reset.
+		tf.runCount = 0;
+		tf.execCost = 0;
+
+		assertEquals("obvious ", tf.runCount, 0);
+		assertEquals("obvious ", tf.execCost, 0);
+
+		assertEquals("Expect tf.runcost() after reset is 0 ", tf.runCost(), (float) 0.0f, 0.0f);
+
+		tf.code.get(0).operation = 0;
+		tf.code.get(1).operation = 8; // endexec
+
+		tf.run(input);
+		// tf.run(input);
+		// tf.run(input);
+
+		assertEquals("Expect tf.runcost() after short code is 2 ", tf.runCost(), (float) 2.0f, 0.0f);
+
+	}
 }
