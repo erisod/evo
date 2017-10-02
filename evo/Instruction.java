@@ -8,9 +8,7 @@ public class Instruction {
 	int p2 = 0;
 	int p3 = 0;
 	int p4 = 0;
-	Random rand = new Random();
-
-	int executionCount = 0;
+	static Random rand = new Random();
 
 	boolean validOp(int op) {
 		if (op >= 0 && op <= 9) {

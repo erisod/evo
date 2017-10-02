@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 public class Problem {
 
 	// set of forms
@@ -12,13 +16,13 @@ public class Problem {
 	// max count of forms
 	int maxForms = 10000;
 
-	ArrayList<Float> scoreHistory = new ArrayList<Float>();
+	// ArrayList<Float> scoreHistory = new ArrayList<Float>();
 
 	boolean solved = false;
 	float topScore;
 	int sameTopScoreCount = 0;
 
-	Random rand = new Random();
+	static Random rand = new Random();
 
 	Problem() {
 		forms = new ArrayList<Form>();
@@ -33,18 +37,43 @@ public class Problem {
 	void runRace() {
 		// System.out.println("forms.size():" + forms.size());
 
+		long startTime = System.nanoTime();
+
 		int[] input = new int[2];
 		input[0] = rand.nextInt(100);
 		input[1] = rand.nextInt(100);
 
-		for (Form f : forms) {
-			f.run(input);
+		boolean useThreads = true;
+
+		if (useThreads) {
+
+			ExecutorService executor = Executors.newFixedThreadPool(2);
+
+			for (Form f : forms) {
+				f.input = input;
+				executor.execute(f);
+			}
+
+			executor.shutdown();
+			try {
+				executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			} catch (InterruptedException e) {
+				System.out.println("Threads never finished.");
+			}
+		} else {
+			for (Form f : forms) {
+				f.input = input;
+				f.run();
+			}
 		}
+
+		// System.out.println("Duration: " + (System.nanoTime() - startTime) / 1000000000.0f);
+
 	}
 
 	/*
-	 * Evaluation defines the problem the forms should evolve to solve. A high
-	 * score is good, a low score is bad.
+	 * Evaluation defines the problem the forms should evolve to solve. a Zero score is
+	 * good (perfect), negative score indicates distance from correct.
 	 */
 	float evaluate(Form f) {
 		/* Output 1 problem. */
@@ -76,11 +105,11 @@ public class Problem {
 
 			if (f.score == topScore) {
 				sameTopScoreCount++;
-				// If we get the same score for 1000 cycles count the problem as
+				// If we get the same score for N cycles count the problem as
 				// solved.
-				if (sameTopScoreCount > 1000 && topScore != Float.MIN_VALUE) {
+				if (sameTopScoreCount > 100 && topScore != Float.NEGATIVE_INFINITY) {
 					System.out.print("Found same top score (" + topScore + ") for many cycles.  Marking solved.");
-					solved = true;
+					// solved = true;
 				}
 			} else {
 				sameTopScoreCount = 0;
@@ -99,12 +128,13 @@ public class Problem {
 		int slotsPerWinner = maxForms / winnerCount;
 		ArrayList<Form> newForms = new ArrayList<Form>();
 
+		// Copy each of the top 10 once, then mutate them n times.
 		for (int i = 0; i < winnerCount; i++) {
+			newForms.add(new Form(forms.get(i), false));
 			for (int j = 0; j < slotsPerWinner; j++) {
 				newForms.add(new Form(forms.get(i), true));
 			}
 		}
-
 
 		// Fill any remainders with random forms (plus 10 extra).
 		for (int i = newForms.size(); i < maxForms + 10; i++) {
@@ -132,7 +162,7 @@ public class Problem {
 		// printScores(5);
 
 		if (runid % 100 == 0 || solved) {
-			System.out.println("Best code example (of " + forms.size() + " :");
+			System.out.println("Best form (of " + forms.size() + ") :");
 			forms.get(0).print();
 		}
 

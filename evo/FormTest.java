@@ -24,7 +24,7 @@ public class FormTest {
 		tf.code.get(2).operation = 8;
 
 		assertEquals("Expect output[0] = 0 (pre-run)", 0, tf.output[0]);
-		tf.run(input);
+		tf.runCode(input);
 		assertEquals("Expect output[0] = 99", 99, tf.output[0]);
 	}
 
@@ -56,7 +56,7 @@ public class FormTest {
 		tf.code.get(4).operation = 8;
 
 		assertEquals("Expect output[0] = 0 (pre-run)", 0, tf.output[0]);
-		tf.run(input);
+		tf.runCode(input);
 		assertEquals("Expect output[0] = 123", 123, tf.output[0]);
 	}
 
@@ -96,13 +96,15 @@ public class FormTest {
 		tf.code.get(1).p1 = 0;
 
 		assertEquals("Expect tf.runcost() is 0", 0.0f, tf.runCost(), 0.0f);
-		tf.run(input);
+		assertEquals("Expect tf.opcost() is 2", 2.0f, tf.opCost(), 0.0f);
+
+		tf.runCode(input);
 
 		assertEquals("Expect tf.runcost() after run of infinite loop is max ", tf.runCost(), (float) tf.maxOps, 0.0f);
 
 		assertEquals("Expect correct run count of 1", 1, tf.runCount);
 
-		tf.run(input);
+		tf.runCode(input);
 
 		assertEquals("Expect tf.runcost() after run of infinite loop is max ", tf.runCost(), (float) tf.maxOps, 0.0f);
 		assertEquals("Expect correct run count of 1", 2, tf.runCount);
@@ -119,7 +121,7 @@ public class FormTest {
 		tf.code.get(0).operation = 0;
 		tf.code.get(1).operation = 8; // endexec
 
-		tf.run(input);
+		tf.runCode(input);
 		// tf.run(input);
 		// tf.run(input);
 

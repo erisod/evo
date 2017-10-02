@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 // Form (e.g. not a life form)
-public class Form implements Comparable<Form> {
+public class Form implements Comparable<Form>, Runnable {
 	int id;
 
 	ArrayList<Instruction> code;
@@ -17,7 +17,7 @@ public class Form implements Comparable<Form> {
 	int ops; // Non-nop operations in code.
 	int execCost = 0;
 	int runCount = 0;
-	int maxOps = 50; // Maximum allowed operations per run.
+	int maxOps = 100; // Maximum allowed operations per run.
 	boolean producedOutput = false;
 	boolean finished = false;
 	static Random rand = new Random();
@@ -69,7 +69,7 @@ public class Form implements Comparable<Form> {
 		System.out.println("OUTPUT: ");
 		for (int i = 0; i < output.length; i++) {
 			if (output[i] != 0) {
-				System.out.println("output[" + i + "] : " + output[i]);
+				System.out.println("  output[" + i + "] : " + output[i]);
 			}
 		}
 
@@ -108,7 +108,7 @@ public class Form implements Comparable<Form> {
 		init();
 
 		int j = 0;
-		int mutationRate = 100; // 1 in n.
+		int mutationRate = 50; // 1 in n.
 
 		Instruction newInst;
 
@@ -120,17 +120,9 @@ public class Form implements Comparable<Form> {
 			// (2) segment removal, duplication.
 			// (3) random additional instructions.
 
-			boolean segmentMutation = false;
+			boolean segmentMutation = true;
 
-			if (segmentMutation && !mutate) {
-				// Induce transcription error. Overwrite (lose copied segment).
-				if (code.size() > 0 && rand.nextInt(mutationRate) == 0) {
-					// Remove 3 at most.
-					for (int k = rand.nextInt(Math.min(code.size(), 3)); k > 0; k--) {
-						code.remove(code.size() - 1);
-					}
-					continue;
-				}
+			if (segmentMutation && mutate) {
 
 				// Transcription error. Skip/duplicate.
 				if (rand.nextInt(mutationRate) == 0) {
@@ -162,16 +154,16 @@ public class Form implements Comparable<Form> {
 
 				// Mutate parameters.
 				if ((rand.nextInt(mutationRate)) == 0) {
-					newInst.p1 = rand.nextInt(parent.codesize * 2) / 2;
+					newInst.p1 = rand.nextInt(parent.codesize * 2) - parent.codesize;
 				}
 				if ((rand.nextInt(mutationRate)) == 0) {
-					newInst.p2 = rand.nextInt(parent.codesize * 2) / 2;
+					newInst.p2 = rand.nextInt(parent.codesize * 2) - parent.codesize;
 				}
 				if ((rand.nextInt(mutationRate)) == 0) {
-					newInst.p3 = rand.nextInt(parent.codesize * 2) / 2;
+					newInst.p3 = rand.nextInt(parent.codesize * 2) - parent.codesize;
 				}
 				if ((rand.nextInt(mutationRate)) == 0) {
-					newInst.p4 = rand.nextInt(parent.codesize * 2) / 2;
+					newInst.p4 = rand.nextInt(parent.codesize * 2) - parent.codesize;
 				}
 			}
 
@@ -190,16 +182,35 @@ public class Form implements Comparable<Form> {
 		return execCost / runCount;
 	}
 
-	void run(int[] newInput) {
+	// Count of instructions that are not no-ops.
+	float opCost() {
+		int count = 0;
+		for (Instruction i : code) {
+			if (i.operation != 0) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+
+	@Override
+	public void run() {
+		runCode(null);
+	}
+
+	void runCode(int[] newInput) {
 		runCount++;
 
-		if (newInput == null) {
+		if (newInput != null) {
+			input = newInput;
+		}
+
+		if (input == null) {
 			System.out.println("Input is null.  Fatal!");
 			System.exit(1);
 		}
-		input = newInput;
-		// System.out.println("code size : " + code.size());
-		// System.out.println("addr: " + this);
+
 
 		reset();
 		int opsleft = maxOps;
@@ -341,30 +352,36 @@ public class Form implements Comparable<Form> {
 			return -1;
 		} else if (score < o.score) {
 			return 1;
-		} else if (score < 0) {
-			// Compare by execution cost, but only if score is at or above zero.
-			return 0;
 		} else {
 			/* Note : Comparing on execution cost when the problem isn't
 			 * solved is bad.  It results in optimizing for an immediately terminating program.
 			 */
 
+			/* Insight: 
+			 * It also seems to be bad for general evolution.  To achieve better-than-plateau
+			 * behavior we have to have a lot of mutation line up and that might result in higher
+			 * cost forms that behave only as well as the lowest cost form.  Removing the higher
+			 * cost versions kills that chance.*/
+
 			// System.out.println("Evaluating form based on code and cost. Score @ " + score);
 
-			// Prefer more efficient code.
-			if ((runCost()) < o.runCost()) {
-				return -1;
-			} else if (runCost() > o.runCost()) {
-				return 1;
-			} else {
-				// Compare code cost (size of code).
-				if (ops < o.ops) {
+			// Prefer more efficient code, but only when the answer is correct. Score of 0
+			// indicates a correct answer.
+			if (score == 0.0) { 
+				if ((runCost()) < o.runCost()) {
 					return -1;
-				} else if (ops > o.ops) {
+				} else if (runCost() > o.runCost()) {
 					return 1;
-				} else
-					return 0;
+				} else {
+					// Prefer smaller code.
+					if ((opCost()) < o.opCost()) {
+						return -1;
+					} else if (opCost() > o.opCost()) {
+						return 1;
+					}
+				}
 			}
 		}
+		return 0;
 	}
 }

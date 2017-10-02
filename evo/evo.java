@@ -4,7 +4,8 @@ public class evo {
 	
 	
 	public static void main(String[] args) {
-		Problem p = new Copy();
+		// Problem p = new NCopy();
+		Problem p = new Negate();
 
 		// p.runCycle(0);
 
