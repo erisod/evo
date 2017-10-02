@@ -60,9 +60,7 @@ public class Form implements Comparable<Form>, Runnable {
 			System.out.println("  Form never run; no input.");
 		} else { 
 			for (int i = 0; i < input.length; i++) {
-				if (input[i] != 0) {
-					System.out.println("  input[" + i + "] : " + input[i]);
-				}
+				System.out.println("  input[" + i + "] : " + input[i]);
 			}
 		}
 
@@ -75,7 +73,7 @@ public class Form implements Comparable<Form>, Runnable {
 
 		System.out.println("SCORE: " + score);
 		if (runCount > 0) {
-			System.out.println("avg run cost " + runCost());
+			System.out.println("avg run cost: " + runCost() + "  opCost:" + opCost());
 		}
 	}
 
@@ -130,9 +128,9 @@ public class Form implements Comparable<Form>, Runnable {
 					continue;
 				}
 
-				// Add new random instructions.
+				// Add new random instructions; more when the parent code size is small.
 				if ((rand.nextInt(mutationRate)) == 0) {
-					for (int i = 0; i < 20; i++) {
+					for (int i = 0; i < rand.nextInt(Math.max(1, codesize - parent.code.size())); i++) {
 						newInst = new Instruction();
 						newInst.operation = rand.nextInt(Instruction.maxOp());
 						newInst.p1 = rand.nextInt(parent.codesize * 2) / 2;
@@ -183,7 +181,7 @@ public class Form implements Comparable<Form>, Runnable {
 	}
 
 	// Count of instructions that are not no-ops.
-	float opCost() {
+	int opCost() {
 		int count = 0;
 		for (Instruction i : code) {
 			if (i.operation != 0) {
@@ -236,8 +234,8 @@ public class Form implements Comparable<Form>, Runnable {
 	private void decnzj() {
 		Instruction op = code.get(cp);
 
-		mem[op.p2] = mem[op.p2] - mem[op.p1];
-		if (mem[op.p2] < 0)
+		mem[op.p1] = mem[op.p1] - mem[op.p2];
+		if (mem[op.p1] < 0)
 			cp = op.p3;
 		else
 			cp++;

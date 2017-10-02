@@ -69,8 +69,8 @@ public class Instruction {
 			desc += "  (add mem" + p1 + "+ mem" + p2 + " and if <= 0 jump to code" + p3 + ")";
 			break;
 		case 3: // decrement (DJN, decrement and branch (jump) if nonzero)[6]
-			desc = "decnzj " + p1 + " " + p2;
-			desc += "  (decrement mem" + p1 + " and if !=0 jump to code" + p2 + ")";
+			desc = "decnzj " + p1 + " " + p2 + " " + p3;
+			desc += "  (decrement mem" + p1 + " by mem " + p2 + " and if !=0 jump to code" + p3 + ")";
 			break;
 		case 4: // increment (P1eq, plus 1 and branch if equal to another
 				// value)[7]

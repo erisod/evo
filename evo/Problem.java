@@ -22,6 +22,7 @@ public class Problem {
 	float topScore;
 	int sameTopScoreCount = 0;
 
+
 	static Random rand = new Random();
 
 	Problem() {
@@ -73,14 +74,28 @@ public class Problem {
 
 	/*
 	 * Evaluation defines the problem the forms should evolve to solve. a Zero score is
-	 * good (perfect), negative score indicates distance from correct.
+	 * good (perfect), negative score indicates distance from correct.  In the general
+	 * case, the answer() helper defines the correct answer and evaluate() need not
+	 * be over-riden.
 	 */
 	float evaluate(Form f) {
-		/* Output 1 problem. */
-		int answer = 1;
-		float score = -(Math.abs(answer - f.output[0]));
-
+		int[] answer = answer(f);
+		float gap = 0f;
+		
+		for (int i = 0 ; i < answer.length; i++) {
+			gap += Math.abs(answer[i] - f.output[i]);
+		}
+		float score = -gap;
+		
 		return score;
+	}
+
+	/* Calculate the correct answer. */
+	int[] answer(Form f) {
+		int[] a = new int[1];
+		a[0] = 1;
+
+		return a;
 	}
 
 	void decorateScores() {
@@ -164,6 +179,11 @@ public class Problem {
 		if (runid % 100 == 0 || solved) {
 			System.out.println("Best form (of " + forms.size() + ") :");
 			forms.get(0).print();
+			System.out.println("ANSWER: ");
+			int answer[] = answer(forms.get(0));
+			for (int i = 0; i < answer.length; i++) {
+				System.out.println("  answer[" + i + "] = " + answer[i]);
+			}
 		}
 
 		if (runid % 10 == 0) {
@@ -185,37 +205,74 @@ public class Problem {
 
 class Add extends Problem {
 	@Override
-	float evaluate(Form f) {
-		// Addition problem.
-		int answer = f.input[0] + f.input[1];
-		float score = -(Math.abs(answer - f.output[0]));
-		return score;
+	int[] answer(Form f) {
+		int[] a = new int[1];
+		for (int val : f.input) {
+			a[0] += val;
+		}
+		return a;
 	}
 }
 
 class Negate extends Problem {
 	@Override
-	float evaluate(Form f) {
-		int answer = -f.input[0];
-		float score = -(Math.abs(answer - f.output[0]));
-		return score;
+	int[] answer(Form f) {
+		int[] a = new int[1];
+		a[0] = -f.input[0];
+		return a;
 	}
+
 }
 
 class NCopy extends Problem {
 	@Override
-	float evaluate(Form f) {
-		/* Copy input[n] to output[n] */
-		float score = -(Math.abs(f.input[0] - f.output[0]) + Math.abs(f.input[1] - f.output[1]));
-		return score;
+	int[] answer(Form f) {
+		return f.input;
 	}
 }
 
 class Copy extends Problem {
 	@Override
-	float evaluate(Form f) {
-		/* Copy input[0] to output[0] */
-		float score = -(Math.abs(f.input[0] - f.output[0]));
-		return score;
+	int[] answer(Form f) {
+		int[] a = new int[1];
+		a[0] = f.input[0];
+		return a;
+	}
+}
+
+class Multiply extends Problem {
+	@Override
+	int[] answer(Form f) {
+		int[] a = new int[1];
+		a[0] = f.input[0] * f.input[1];
+		
+		return a;
+	}
+}
+
+class Divide extends Problem {
+	@Override
+	int[] answer(Form f) {
+		int[] a = new int[1];
+		if (f.input[1] == 0) {
+			a[0] = 0;
+		} else {
+			a[0] = f.input[0] / f.input[1];
+		}
+		return a;
+	}
+}
+
+class Average extends Problem {
+	@Override
+	int[] answer(Form f) {
+		int[] a = new int[1];
+
+		for (int val : f.input) {
+			a[0] += val;
+		}
+
+		a[0] = a[0] / f.input.length;
+		return a;
 	}
 }
