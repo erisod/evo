@@ -4,8 +4,8 @@ public class evo {
 	
 	
 	public static void main(String[] args) {
-		Problem p = new Negate();
-		// Problem p = new Multiply();
+		// Problem p = new Negate();
+		Problem p = new Multiply();
 
 		// p.runCycle(0);
 

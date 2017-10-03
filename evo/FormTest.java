@@ -96,7 +96,7 @@ public class FormTest {
 		tf.code.get(1).p1 = 0;
 
 		assertEquals("Expect tf.runcost() is 0", 0.0f, tf.runCost(), 0.0f);
-		assertEquals("Expect tf.opcost() is 2", 2.0f, tf.opCost(), 0.0f);
+		assertEquals("Expect tf.opcost() is 2", 2.0f, tf.opCost(), 0.5f);
 
 		tf.runCode(input);
 
@@ -122,10 +122,45 @@ public class FormTest {
 		tf.code.get(1).operation = 8; // endexec
 
 		tf.runCode(input);
-		// tf.run(input);
-		// tf.run(input);
-
 		assertEquals("Expect tf.runcost() after short code is 2 ", tf.runCost(), (float) 2.0f, 0.0f);
+	}
+
+	@Test
+	public void costEvalTest2() {
+		int[] input = new int[10];
+		input[0] = 103;
+		
+		// Code evolved for negation.
+		/*
+		  0 : copyin 0 1  (copy input 0 to mem1)
+		  1 : decnzj 0 1 4  (decrement mem0 by mem 1 and if !=0 jump to code4)
+		  2 : noop
+		  3 : noop
+		  4 : copyres 0 0  (copy mem0 to output0)
+		 */
+		Form tf = new Form();
+
+		tf.code.get(0).operation = Instruction.COPYIN;
+		tf.code.get(0).p1 = 1;
+
+		tf.code.get(1).operation = Instruction.DECNZJ;
+		tf.code.get(1).p1 = 0;
+		tf.code.get(1).p2 = 1;
+		tf.code.get(1).p3 = 4;
+
+		tf.code.get(2).operation = Instruction.NOOP;
+		tf.code.get(3).operation = Instruction.NOOP;
+
+		tf.code.get(4).operation = Instruction.COPYRES;
+		tf.code.get(4).p1 = 0;
+		tf.code.get(4).p2 = 0;
+		
+		tf.code.get(5).operation = Instruction.ENDEXEC;
+
+		tf.runCode(input);
+
+		assertEquals("Expect tf.runcost() ", (float) 6.0f, tf.runCost(), 0.0f);
+		assertEquals("Expect tf.opcost() ", (float) 4.0f, tf.opCost(), 0.1f);
 
 	}
 }

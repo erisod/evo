@@ -167,7 +167,7 @@ public class Problem {
 	}
 
 	void runCycle(int runid) {
-		int batchSize = 5;
+		int batchSize = 10;
 		for (int i = 0; i < batchSize; i++) {
 			runRace();
 			decorateScores();

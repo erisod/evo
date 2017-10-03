@@ -130,7 +130,8 @@ public class Form implements Comparable<Form>, Runnable {
 
 				// Add new random instructions; more when the parent code size is small.
 				if ((rand.nextInt(mutationRate)) == 0) {
-					for (int i = 0; i < rand.nextInt(Math.max(1, codesize - parent.code.size())); i++) {
+					int count = rand.nextInt(Math.max(1, codesize - parent.code.size()));
+					for (int i = 0; i < count; i++) {
 						newInst = new Instruction();
 						newInst.operation = rand.nextInt(Instruction.maxOp());
 						newInst.p1 = rand.nextInt(parent.codesize * 2) / 2;
@@ -180,12 +181,14 @@ public class Form implements Comparable<Form>, Runnable {
 		return execCost / runCount;
 	}
 
-	// Count of instructions that are not no-ops.
-	int opCost() {
-		int count = 0;
+	// Count of instructions; .001 for no-op. 1 for others.
+	float opCost() {
+		float count = 0.0f;
 		for (Instruction i : code) {
-			if (i.operation != 0) {
-				count++;
+			if (i.operation == Instruction.NOOP) {
+				count += .001f;
+			} else {
+				count += 1.0f;
 			}
 		}
 		return count;
@@ -218,8 +221,6 @@ public class Form implements Comparable<Form>, Runnable {
 			opsleft--;
 			execCost++;
 		}
-
-		// execCost += maxOps - opsleft;
 	}
 
 	private void addleq() {
